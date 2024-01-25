@@ -1,6 +1,6 @@
 delimiter //
 
-CREATE OR REPLACE PROCEDURE `processStripeEvent`( IN  request JSON )
+CREATE OR REPLACE PROCEDURE `processBraintreeEvent`( IN  request JSON )
 BEGIN 
     SET @type = JSON_Value( request, "$.type" );
 
@@ -11,7 +11,7 @@ BEGIN
 
         IF @status = 'complete' THEN
             SET @amount = JSON_Value( request, "$.data.object.amount_total" );
-            SET @rn = (select id from `blg_hdr_rechnung` where `stripe_id` = @id);
+            SET @rn = (select id from `blg_hdr_rechnung` where `braintree_id` = @id);
             SET @new_id = (select ifnull(max(id),0)+1 from blg_pay_rechnung);
             INSERT INTO `blg_pay_rechnung` (
                 id,
@@ -24,7 +24,7 @@ BEGIN
                 @new_id,
                 curdate(),
                 @rn,
-                'stripe',
+                'braintree',
                 @amount / 100,
                 @payment_intent
             );
@@ -35,26 +35,11 @@ BEGIN
 END //
 
 
-CREATE TRIGGER IF NOT EXISTS stripe_webhook_processStripeEvent
+CREATE TRIGGER IF NOT EXISTS braintree_webhook_processBraintreeEvent
 AFTER INSERT  
-ON stripe_webhook FOR EACH ROW
+ON braintree_webhook FOR EACH ROW
 BEGIN
-    call processStripeEvent(new.eventdata);
+    call processBraintreeEvent(new.eventdata);
 END //
 
 
-
-CREATE TRIGGER IF NOT EXISTS blg_hdr_rechnung_project_state_after_pay
-AFTER UPDATE  
-ON blg_hdr_rechnung FOR EACH ROW
-BEGIN
-    if new.offen = 0 then
-        update projectmanagement set 
-            state = '103' 
-        where 
-            invoice_id = new.id
-            and name = new.referenz
-            and state = '102'
-        ;
-    end if;
-END //

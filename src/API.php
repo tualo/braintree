@@ -2,25 +2,58 @@
 namespace Tualo\Office\Braintree;
 
 use Tualo\Office\Basic\TualoApplication as App;
-use Ramsey\Uuid\Uuid;
-use Stripe\Stripe;
-use Stripe\Checkout;
+use Braintree\Gateway;
 
-/**
- * 
- \Tualo\Office\Stripe\API::addShorthandCheckout(
-    $success_url,
-    $cancel_url,
-    $product_name,
-    $product_description,
-    $amount,
-    $quantity
-    );
- * 
- */
 
 class API {
 
+    private static $ENV = null;
+    private static $gateway = null;
+    
+    public static function init():void{
+        self::getEnvironment();
+
+        self::$gateway = new Braintree\Gateway([
+            'environment' => self::$ENV['BT_ENVIRONMENT'],
+            'merchantId' => self::$ENV['BT_MERCHANT_ID'],
+            'publicKey' => self::$ENV['BT_PUBLIC_KEY'],
+            'privateKey' => self::$ENV['BT_PRIVATE_KEY']
+        ]);
+    }
+
+    public static function getEnvironment(): array
+    {
+        if (is_null(self::$ENV)) {
+            $db = App::get('session')->getDB();
+            try {
+                if (!is_null($db)) {
+                    $data = $db->direct('select id,val from braintree_environments');
+                    foreach ($data as $d) {
+                        self::$ENV[$d['id']] = $d['val'];
+                    }
+                }
+            } catch (\Exception $e) {
+            }
+        }
+        return self::$ENV;
+    }
+
+    public static function getGateway(): Gateway
+    {
+        if (is_null(self::$gateway)) {
+            self::init();
+        }
+        return self::$gateway;
+    }
+
+    public static function getClientToken(): string
+    {
+        $gateway = self::getGateway();
+        return $gateway->clientToken()->generate();
+    }
+
+    
+    
     public static function addShorthandCheckout(
         string $success_url,
         string $cancel_url,
@@ -30,34 +63,26 @@ class API {
         int $quantity,
         int $expires_in=3600
     ):array{
-
         $db = App::get('session')->getDB();
-        $stripeSecretKey = $db->singleValue('SELECT val FROM stripe_environment WHERE id="client_secret"',[],'val');
-        Stripe::setApiKey($stripeSecretKey);
-        $checkout_session = Checkout\Session::create([
-            'line_items' => [[
-                # Provide the exact Price ID (e.g. pr_1234) of the product you want to sell
-                'price_data' => [
-                    'currency'=>'eur',
-                    'product_data'=>[
-                        'name'=>$product_name,
-                        'description'=>$product_description
-                    ],
-                    'unit_amount' => round(100*floatval($amount),0),
-                ],
-                'quantity' => $quantity,
-            ]],
-            'mode' => 'payment',
-            'success_url' =>    $success_url,
-            'cancel_url' =>     $cancel_url,
-            'expires_at' =>     $expires_in
+
+        $amount = $_POST["amount"];
+        $nonce = $_POST["payment_method_nonce"];
+
+        $result = self::$gateway->transaction()->sale([
+            'amount' => $amount,
+            'paymentMethodNonce' => $nonce,
+            'options' => [
+                'submitForSettlement' => true
+            ]
         ]);
 
-        return  [
-            'url'=>$checkout_session->url,
-            'id'=>$checkout_session->id,
-            'payment_intent'=>$checkout_session->payment_intent,
-            'expires_at'=>$checkout_session->expires_at
-        ];
+        if ($result->success || !is_null($result->transaction)) {
+            $transaction = $result->transaction;
+            return  [
+                'url'=>$transaction->url,
+                'id'=>$transaction->id
+            ];
+        }
+        
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "tualo/braintree",
-    "description": "tualo - braintree implementatio",
+    "description": "tualo - braintree implementation",
     "type": "library",
     "license": "MIT",
     "authors": [
