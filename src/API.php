@@ -13,7 +13,7 @@ class API {
     public static function init():void{
         self::getEnvironment();
 
-        self::$gateway = new Braintree\Gateway([
+        self::$gateway = new Gateway([
             'environment' => self::$ENV['BT_ENVIRONMENT'],
             'merchantId' => self::$ENV['BT_MERCHANT_ID'],
             'publicKey' => self::$ENV['BT_PUBLIC_KEY'],
@@ -27,7 +27,7 @@ class API {
             $db = App::get('session')->getDB();
             try {
                 if (!is_null($db)) {
-                    $data = $db->direct('select id,val from braintree_environments');
+                    $data = $db->direct('select id,val from braintree_environment');
                     foreach ($data as $d) {
                         self::$ENV[$d['id']] = $d['val'];
                     }
