@@ -1,22 +1,25 @@
 {
-    "name": "tualo/braintree",
-    "description": "tualo - braintree implementation",
-    "type": "library",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Thomas Hoffmann",
-            "email": "thomas.hoffmann@tualo.de"
-        }
-    ],
-    "autoload": {
-        "psr-4": {
-            "Tualo\\Office\\Braintree\\": "src/"
-        },
-        "files": ["src/functions.php"]
-    },
-    "minimum-stability": "dev",
-    "require": {
-        "braintree/braintree_php": "*"
+  "name": "tualo/braintree",
+  "description": "tualo - braintree implementation",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Thomas Hoffmann",
+      "email": "thomas.hoffmann@tualo.de"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Tualo\\Office\\Braintree\\": "src/"
+    },
+    "files": [
+      "src/functions.php"
+    ]
+  },
+  "minimum-stability": "dev",
+  "require": {
+    "braintree/braintree_php": "~6.27.0"
+  },
+  "version": "1.0.1"
 }
