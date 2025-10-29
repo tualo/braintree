@@ -1,14 +1,18 @@
 <?php
+
 namespace Tualo\Office\Braintree\Routes;
+
 use Tualo\Office\Basic\TualoApplication as App;
 use Tualo\Office\Basic\Route as BasicRoute;
 use Tualo\Office\Basic\IRoute;
 use Tualo\Office\Stripe\API;
 
-class Test implements IRoute{
-    
-    public static function register(){
-        BasicRoute::add('/braintree/test',function($matches){
+class Test extends \Tualo\Office\Basic\RouteWrapper
+{
+
+    public static function register()
+    {
+        BasicRoute::add('/braintree/test', function ($matches) {
             try {
                 $db = App::get('session')->getDB();
 
@@ -20,15 +24,13 @@ class Test implements IRoute{
                     1.99,
                     1
                 );
-                App::result('success',true);
-                App::result('data',$data);
+                App::result('success', true);
+                App::result('data', $data);
                 App::contenttype('application/json');
-
-            }catch(\Exception $e){
+            } catch (\Exception $e) {
                 echo $e->getMessage();
                 http_response_code(400);
             }
-        },['get'],true);
-
+        }, ['get'], true);
     }
 }
